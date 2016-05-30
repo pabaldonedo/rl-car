@@ -177,7 +177,7 @@ class SarsaAgent(object):
         self.update(s, s_prime, action, a_prime, reward, done_prime)
         self.alpha = self.alpha_step()
         self.iteration += 1
-        return self.take_action(features_s_prime)
+        return self.take_action(s_prime)
 
 
 class SarsaLambdaAgent(SarsaAgent):
@@ -226,26 +226,21 @@ class ContinuousSarsaLambdaAgent(SarsaLambdaAgent):
         self.offset_fraction = 0.5
         self.n_features = 10
         self.tile_size = (self.environment.observation_space.high -\
-                                self.environment.observation_space.low)*1./ (np.array(self.n_tiles)-1)
+                                self.environment.observation_space.low)*1./ np.array(self.n_tiles)
 
         self.offsets = np.random.uniform(low=-self.offset_fraction*self.tile_size,
                                         high=self.offset_fraction*self.tile_size,
                                         size=(self.n_features, self.tile_size.size))
           
     def get_state(self, observation):
-        f = np.zeros(self.n_features*np.sum(self.n_tiles))#np.zeros(self.n_features*np.prod(self.n_tiles))
+        f = np.zeros(self.n_features*np.prod(self.n_tiles))
 
         active_tiles = ((observation-self.offsets-self.environment.observation_space.low) /self.tile_size).astype(int)
 
 
-        #idx = (active_tiles[:,0]*self.n_tiles[1]+active_tiles[:,1]) +\
-        #                                            np.arange(self.n_features)*np.prod(self.n_tiles)
+        idx = (active_tiles[:,0]*self.n_tiles[1]+active_tiles[:,1]) +\
+                                                    np.arange(self.n_features)*np.prod(self.n_tiles)
 
-        active_tiles[:,1] += 9
-        active_tiles[:,0] += (np.arange(self.n_features)*np.sum(self.n_tiles))
-        active_tiles[:,1] += (np.arange(self.n_features)*np.sum(self.n_tiles))
-
-        idx = active_tiles.flatten() 
 
         assert np.sum(idx<0) == 0
         f[idx] = 1
@@ -254,9 +249,7 @@ class ContinuousSarsaLambdaAgent(SarsaLambdaAgent):
     def greedy_action(self, state):
         scores = np.dot(self.q, state)
         return np.random.choice(np.argwhere(scores==np.amax(scores)).flatten())
-        #if np.unique(scores).size == 1:
-        #    return np.random.choice(self.actions)
-#        return np.argmax(scores)
+
 
     def e_greedy_action(self, state, e=0.1):
         draw = np.random.rand()
@@ -265,8 +258,7 @@ class ContinuousSarsaLambdaAgent(SarsaLambdaAgent):
         return np.random.choice(self.actions)
 
     def initialize_q(self, q0=0):
-        #self.q = np.empty((3,self.n_features*np.prod(self.n_tiles)))
-        self.q = np.empty((3,self.n_features*np.sum(self.n_tiles)))
+        self.q = np.empty((3,self.n_features*np.prod(self.n_tiles)))
         self.q.fill(q0)
         self.b = np.zeros(3)
 
@@ -309,6 +301,8 @@ class QLearner(SarsaLambdaAgent):
 
     def take_greedy(self, state):
         return np.argmax(self.q[state[0], state[1]])
+
+
 
 
 if __name__ == '__main__':
