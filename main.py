@@ -155,14 +155,13 @@ class SarsaAgent(object):
         return self.take_action(state)
 
     def greedy_action(self, state):
-        if np.unique(self.q[state[0], state[1]]).size ==  1:
-            return np.random.choice(self.actions)
-        return np.argmax(self.q[state[0], state[1]])
+       return np.random.choice(np.argwhere(self.q[state[0], state[1]]==np.amax(self.q[state[0], state[1]])).flatten())
+
 
     def e_greedy_action(self, state, e=0.2):
         draw = np.random.rand()
         if draw > e:
-            return np.argmax(self.q[state[0], state[1]])
+            self.greedy_action(state)
         return np.random.choice(self.actions)
 
     def update(self, s, s_prime, a, a_prime, reward, done_prime):
@@ -301,7 +300,6 @@ class QLearner(SarsaLambdaAgent):
 
     def take_greedy(self, state):
         return np.argmax(self.q[state[0], state[1]])
-
 
 
 
